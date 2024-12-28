@@ -1,0 +1,34 @@
+pipeline {
+    agent any
+    stages {
+        
+        stage('SCM') {
+            steps {
+                git branch: 'main', url: 'https://github.com/25Mansijadhav/Jenkins_scripted.git'
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                sh "/usr/bin/docker image build -t mansi0011/script ."
+            }
+        }
+        
+        stage("Push docker image") {
+            steps {
+                withCredentials([string(credentialsId: 'DOCKER_HUB_TOKEN', variable: 'DOCKER_HUB_TOKEN')]) {
+                   
+                sh "echo $DOCKER_HUB_TOKEN | /usr/bin/docker login -u mansi0011 --password-stdin"
+                sh "/usr/bin/docker image push mansi0011/script"
+            }
+        }
+        
+        stage("Deploy docker service") {
+            steps {
+                sh "/usr/bin/docker service rm script"
+                sh "/usr/bin/docker service create --name script -p 4500:4500 --replicas 2 mansi0011/script"
+            }
+        }
+        
+    }
+}
